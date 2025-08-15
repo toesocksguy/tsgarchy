@@ -33,143 +33,26 @@ CONFIG_DIR="$HOME/.local/src/arch-setup/configs"
 
 # Package arrays
 ESSENTIAL_PACKAGES=(
-    # System utilities
-    "base-devel"
-    "git"
-    "curl"
-    "wget"
-    "vim"
-    "nano"
-    "htop"
-    "neofetch"
-    "tree"
-    "unzip"
-    "zip"
-    
-    # DWM and X11 essentials
-    "xorg-server"
-    "xorg-xinit"
-    "xorg-xsetroot"
-    "xorg-xrandr"
-    "ghostty"
-    "rofi"
-    "feh"
-    "picom"
-    "dunst"
-    "xsel"
-    "xclip"
-    "maim"
-    "thunar"
-    "thunar-archive-plugin"
-    "thunar-media-tags-plugin"
-    
-    # Development tools
-    "python"
-    "python-pip"
-    "ruby"
-    "emacs"
-    "docker"
-    "docker-compose"
-    "openssh"
-    
-    # System utilities
-    "flatpak"
-    "btop"
-    "yt-dlp"
-    "bluez"
-    "bluez-utils"
-    "blueman"
-    "ufw"
-    
-    # Media and codecs
-    "mpv"
-    "celluloid"
-    "ffmpeg"
-    "obs-studio"
-    "gst-plugins-good"
-    "gst-plugins-bad"
-    "gst-plugins-ugly"
-    "gst-libav"
-    
-    # Archive support
-    "p7zip"
-    "unrar"
-    "tar"
-    "gzip"
-    "bzip2"
-    "xz"
-    
-    # Document viewers
-    "okular"
-    "zathura"
-    "zathura-pdf-mupdf"
-    
-    # Backup solution
-    "rsync"
-    "timeshift"
-    
-    # Font rendering
-    "fontconfig"
-    "freetype2"
-    "cairo"
-    
-    # Ruby development (Odin Project requirements)
-    "nodejs"
-    "npm"
-    "postgresql"
-    
-    # AMD-specific
-    "amd-ucode"
-    "mesa"
-    "vulkan-radeon"
-    "libva-mesa-driver"
-    "mesa-vdpau"
-    
-    # Audio
-    "pipewire"
-    "pipewire-alsa"
-    "pipewire-pulse"
-    "pipewire-jack"
-    "wireplumber"
-    
-    # Networking
-    "networkmanager"
-    "network-manager-applet"
-    
-    # Fonts
-    "ttf-dejavu"
-    "ttf-liberation"
-    "noto-fonts"
-    "noto-fonts-emoji"
-    
-    # File system support
-    "ntfs-3g"
-    "exfat-utils"
+    "base-devel" "git" "curl" "wget" "vim" "nano" "htop" "neofetch" "tree" "unzip" "zip"
+    "xorg-server" "xorg-xinit" "xorg-xsetroot" "xorg-xrandr" "ghostty" "rofi" "feh" "picom"
+    "dunst" "xsel" "xclip" "maim" "thunar" "thunar-archive-plugin" "thunar-media-tags-plugin"
+    "python" "python-pip" "ruby" "emacs" "docker" "docker-compose" "openssh" "flatpak" "btop"
+    "yt-dlp" "bluez" "bluez-utils" "blueman" "ufw" "mpv" "celluloid" "ffmpeg" "obs-studio"
+    "gst-plugins-good" "gst-plugins-bad" "gst-plugins-ugly" "gst-libav" "p7zip" "unrar"
+    "tar" "gzip" "bzip2" "xz" "okular" "zathura" "zathura-pdf-mupdf" "rsync" "timeshift"
+    "fontconfig" "freetype2" "cairo" "nodejs" "npm" "postgresql" "amd-ucode" "mesa"
+    "vulkan-radeon" "libva-mesa-driver" "mesa-vdpau" "pipewire" "pipewire-alsa"
+    "pipewire-pulse" "pipewire-jack" "wireplumber" "networkmanager" "network-manager-applet"
+    "ttf-dejavu" "ttf-liberation" "noto-fonts" "noto-fonts-emoji" "ntfs-3g" "exfat-utils"
 )
 
 ADDITIONAL_PACKAGES=(
-    "firefox"
-    "vlc"
-    "gimp"
-    "discord"
-    "steam"
-    "thunderbird"
-    "lm_sensors"
-    "ttf-jetbrains-mono"
-    "nitrogen"
+    "firefox" "vlc" "gimp" "discord" "steam" "thunderbird" "lm_sensors" "ttf-jetbrains-mono" "nitrogen"
 )
 
 AUR_PACKAGES=(
-    "google-chrome"
-    "protonvpn"
-    "onlyoffice-bin"
-    "mise-bin"
-    "lazygit"
-    "lazydocker"
-    "yazi"
-    "jrnl"
-    "catppuccin-gtk-theme-mocha"
-    "papirus-icon-theme"
+    "google-chrome" "protonvpn" "onlyoffice-bin" "mise-bin" "lazygit" "lazydocker"
+    "yazi" "jrnl" "catppuccin-gtk-theme-mocha" "papirus-icon-theme"
 )
 
 # Logging functions
@@ -415,250 +298,7 @@ setup_ufw_firewall() {
     log "UFW firewall configured and enabled"
 }
 
-# DWM configuration functions
-create_dwm_config() {
-    log "Creating custom DWM configuration..."
-    backup_file "$DWM_DIR/config.h"
-    
-    if [[ "$DRY_RUN" == true ]]; then
-        info "DRY RUN: Would create DWM config.h"
-        return
-    fi
-    
-    cat > "$DWM_DIR/config.h" << 'EOF'
-/* See LICENSE file for copyright and license details. */
-
-/* Catppuccin Mocha Colors */
-static const char col_base[]        = "#1e1e2e";  /* Background */
-static const char col_mantle[]      = "#181825";  /* Darker background */
-static const char col_surface0[]    = "#313244";  /* Surface */
-static const char col_surface1[]    = "#45475a";  /* Surface variant */
-static const char col_surface2[]    = "#585b70";  /* Surface variant 2 */
-static const char col_text[]        = "#cdd6f4";  /* Foreground text */
-static const char col_subtext1[]    = "#bac2de";  /* Subtext */
-static const char col_subtext0[]    = "#a6adc8";  /* Subtext variant */
-static const char col_blue[]        = "#89b4fa";  /* Blue accent */
-static const char col_lavender[]    = "#b4befe";  /* Lavender accent */
-static const char col_mauve[]       = "#cba6f7";  /* Mauve accent */
-
-/* appearance */
-static const unsigned int borderpx  = 2;        /* border pixel of windows */
-static const unsigned int snap      = 32;       /* snap pixel */
-static const int swallowfloating    = 0;        /* 1 means swallow floating windows by default */
-static const unsigned int gappih    = 10;       /* horiz inner gap between windows */
-static const unsigned int gappiv    = 10;       /* vert inner gap between windows */
-static const unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
-static const unsigned int gappov    = 10;       /* vert outer gap between windows and screen edge */
-static       int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
-static const int showbar            = 1;        /* 0 means no bar */
-static const int topbar             = 1;        /* 0 means bottom bar */
-static const char *fonts[]          = { "JetBrains Mono:size=10" };
-static const char dmenufont[]       = "JetBrains Mono:size=10";
-
-static const char *colors[][3]      = {
-	/*               fg           bg           border   */
-	[SchemeNorm] = { col_text,     col_base,    col_surface1 },
-	[SchemeSel]  = { col_base,     col_mauve,   col_mauve    },
-};
-
-/* tagging */
-static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-
-static const Rule rules[] = {
-	/* class           instance  title           tags mask  isfloating  isterminal  noswallow  monitor */
-	{ "Gimp",          NULL,     NULL,           0,         1,          0,           0,        -1 },
-	{ "Firefox",       NULL,     NULL,           1 << 8,    0,          0,          -1,        -1 },
-	{ "ghostty",       NULL,     NULL,           0,         0,          1,           0,        -1 },
-	{ "ProtonVPN",     NULL,     NULL,           0,         1,          0,           0,        -1 },
-	{ "Blueman-manager", NULL,   NULL,           0,         1,          0,           0,        -1 },
-	{ "Thunar",        NULL,     NULL,           0,         0,          0,           0,        -1 },
-	{ "mpv",           NULL,     NULL,           0,         0,          0,           0,        -1 },
-	{ "Celluloid",     NULL,     NULL,           0,         0,          0,           0,        -1 },
-	{ "obs",           NULL,     NULL,           0,         0,          0,           0,        -1 },
-	{ "Okular",        NULL,     NULL,           0,         0,          0,           0,        -1 },
-	{ NULL,            NULL,     "Event Tester", 0,         0,          0,           1,        -1 }, /* xev */
-};
-
-/* layout(s) */
-static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
-static const int nmaster     = 1;    /* number of clients in master area */
-static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
-
-static const Layout layouts[] = {
-	/* symbol     arrange function */
-	{ "[]=",      tile },    /* first entry is default */
-	{ "><>",      NULL },    /* no layout function means floating behavior */
-	{ "[M]",      monocle },
-};
-
-/* key definitions */
-#define MODKEY Mod4Mask  /* Windows/Super key */
-#define TAGKEYS(KEY,TAG) \
-	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
-	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
-	{ MODKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} }, \
-	{ MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
-
-/* helper for spawning shell commands in the pre dwm-5.0 fashion */
-#define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
-
-/* commands */
-static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = { "rofi", "-show", "drun", NULL };
-static const char *termcmd[]  = { "ghostty", NULL };
-static const char *randomwallcmd[] = { "sh", "-c", "feh --bg-fill --randomize ~/Pictures/Wallpapers/*", NULL };
-static const char *screenshotcmd[] = { "maim", "-s", "-u", "/tmp/screenshot.png", NULL };
-static const char *filemanagercmd[] = { "thunar", NULL };
-static const char *yazifilemanagercmd[] = { "ghostty", "-e", "yazi", NULL };
-
-static Key keys[] = {
-	/* modifier                     key        function        argument */
-	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
-	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
-	{ MODKEY|ShiftMask,             XK_w,      spawn,          {.v = randomwallcmd } },
-	{ MODKEY,                       XK_Print,  spawn,          {.v = screenshotcmd } },
-	{ MODKEY,                       XK_e,      spawn,          {.v = filemanagercmd } },
-	{ MODKEY|ShiftMask,             XK_e,      spawn,          {.v = yazifilemanagercmd } },
-	{ MODKEY,                       XK_b,      togglebar,      {0} },
-	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
-	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
-	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
-	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
-	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
-	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
-	{ MODKEY,                       XK_Return, zoom,           {0} },
-	{ MODKEY,                       XK_Tab,    view,           {0} },
-	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
-	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
-	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
-	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
-	{ MODKEY,                       XK_space,  setlayout,      {0} },
-	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
-	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
-	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
-	{ MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
-	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
-	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
-	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
-	TAGKEYS(                        XK_1,                      0)
-	TAGKEYS(                        XK_2,                      1)
-	TAGKEYS(                        XK_3,                      2)
-	TAGKEYS(                        XK_4,                      3)
-	TAGKEYS(                        XK_5,                      4)
-	TAGKEYS(                        XK_6,                      5)
-	TAGKEYS(                        XK_7,                      6)
-	TAGKEYS(                        XK_8,                      7)
-	TAGKEYS(                        XK_9,                      8)
-	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
-};
-
-/* button definitions */
-static Button buttons[] = {
-	/* click                event mask      button          function        argument */
-	{ ClkLtSymbol,          0,              Button1,        setlayout,      {0} },
-	{ ClkLtSymbol,          0,              Button3,        setlayout,      {.v = &layouts[2]} },
-	{ ClkWinTitle,          0,              Button2,        zoom,           {0} },
-	{ ClkStatusText,        0,              Button2,        spawn,          {.v = termcmd } },
-	{ ClkClientWin,         MODKEY,         Button1,        movemouse,      {0} },
-	{ ClkClientWin,         MODKEY,         Button2,        togglefloating, {0} },
-	{ ClkClientWin,         MODKEY,         Button3,        resizemouse,    {0} },
-	{ ClkTagBar,            0,              Button1,        view,           {0} },
-	{ ClkTagBar,            0,              Button3,        toggleview,     {0} },
-	{ ClkTagBar,            MODKEY,         Button1,        tag,            {0} },
-	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      {0} },
-};
-EOF
-}
-
-apply_dwm_patches() {
-    log "Downloading and applying DWM patches..."
-    
-    if [[ "$DRY_RUN" == true ]]; then
-        info "DRY RUN: Would apply DWM patches"
-        return
-    fi
-    
-    cd "$DWM_DIR"
-    
-    local patches=(
-        "https://dwm.suckless.org/patches/autostart/dwm-autostart-20210120-cb3f58a.diff"
-        "https://dwm.suckless.org/patches/center/dwm-center-6.2.diff"
-        "https://dwm.suckless.org/patches/swallow/dwm-swallow-20201211-61bb8b2.diff"
-        "https://dwm.suckless.org/patches/cursorwarp/dwm-cursorwarp-20210222-61bb8b2.diff"
-    )
-    
-    local patch_names=(
-        "autostart.patch"
-        "center.patch"
-        "swallow.patch"
-        "cursorwarp.patch"
-    )
-    
-    for i in "${!patches[@]}"; do
-        local url="${patches[$i]}"
-        local filename="${patch_names[$i]}"
-        
-        if curl -o "$filename" "$url"; then
-            if patch -p1 < "$filename"; then
-                log "Applied $filename successfully"
-            else
-                warn "Failed to apply $filename. Continuing with default configuration."
-            fi
-        else
-            warn "Failed to download $filename"
-        fi
-    done
-}
-
-build_dwm() {
-    log "Building DWM..."
-    
-    if [[ "$DRY_RUN" == true ]]; then
-        info "DRY RUN: Would build and install DWM"
-        return
-    fi
-    
-    cd "$DWM_DIR"
-    make clean install || error "Failed to build DWM"
-}
-
-create_dwmblocks_config() {
-    log "Creating dwmblocks configuration..."
-    backup_file "$DWMBLOCKS_DIR/blocks.h"
-    
-    if [[ "$DRY_RUN" == true ]]; then
-        info "DRY RUN: Would create dwmblocks config"
-        return
-    fi
-    
-    cat > "$DWMBLOCKS_DIR/blocks.h" << 'EOF'
-static const Block blocks[] = {
-	/*Icon*/	/*Command*/		/*Update Interval*/	/*Update Signal*/
-	{"🔊 ", "amixer get Master | grep -o '[0-9]*%' | head -1", 5, 0},
-	{"💾 ", "free -h | awk '/^Mem/ { print $3\"/\"$2 }' | sed s/i//g", 30, 0},
-	{"💻 ", "btop -p 0 | grep -o '[0-9]*\\.[0-9]*%' | head -1 || echo '0%'", 10, 0},
-	{"🌡️ ", "sensors | grep 'Tctl' | awk '{print $2}' | sed 's/+//' || echo 'N/A'", 10, 0},
-	{"📅 ", "date '+%b %d (%a) %I:%M%p'", 60, 0},
-};
-
-//sets delimiter between status commands
-static char delim[] = " | ";
-static unsigned int delimLen = 5;
-EOF
-}
-
-build_dwmblocks() {
-    log "Building dwmblocks..."
-    
-    if [[ "$DRY_RUN" == true ]]; then
-        info "DRY RUN: Would build and install dwmblocks"
-        return
-    fi
-    
-    cd "$DWMBLOCKS_DIR"
-    make && sudo make install || error "Failed to build dwmblocks"
-}
-
+# DWM setup functions
 setup_dwm_environment() {
     log "Setting up DWM environment..."
     
@@ -683,6 +323,143 @@ setup_dwm_environment() {
     create_dwm_autostart
 }
 
+create_dwm_config() {
+    log "Creating custom DWM configuration..."
+    backup_file "$DWM_DIR/config.h"
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would create DWM config.h"
+        return
+    fi
+    
+    cat > "$DWM_DIR/config.h" << 'DWMEOF'
+/* DWM Config with Catppuccin Mocha Colors */
+static const char col_base[] = "#1e1e2e";
+static const char col_text[] = "#cdd6f4";
+static const char col_mauve[] = "#cba6f7";
+static const char col_surface1[] = "#45475a";
+
+static const unsigned int borderpx = 2;
+static const unsigned int snap = 32;
+static const int showbar = 1;
+static const int topbar = 1;
+static const char *fonts[] = { "JetBrains Mono:size=10" };
+
+static const char *colors[][3] = {
+    [SchemeNorm] = { col_text, col_base, col_surface1 },
+    [SchemeSel]  = { col_base, col_mauve, col_mauve },
+};
+
+static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+
+static const Rule rules[] = {
+    { "Firefox", NULL, NULL, 1 << 8, 0, 0, -1, -1 },
+    { "ghostty", NULL, NULL, 0, 0, 1, 0, -1 },
+};
+
+static const float mfact = 0.55;
+static const int nmaster = 1;
+static const int resizehints = 1;
+
+static const Layout layouts[] = {
+    { "[]=", tile },
+    { "><>", NULL },
+    { "[M]", monocle },
+};
+
+#define MODKEY Mod4Mask
+#define TAGKEYS(KEY,TAG) \
+    { MODKEY, KEY, view, {.ui = 1 << TAG} }, \
+    { MODKEY|ControlMask, KEY, toggleview, {.ui = 1 << TAG} }, \
+    { MODKEY|ShiftMask, KEY, tag, {.ui = 1 << TAG} }, \
+    { MODKEY|ControlMask|ShiftMask, KEY, toggletag, {.ui = 1 << TAG} },
+
+static const char *dmenucmd[] = { "rofi", "-show", "drun", NULL };
+static const char *termcmd[] = { "ghostty", NULL };
+
+static Key keys[] = {
+    { MODKEY, XK_p, spawn, {.v = dmenucmd } },
+    { MODKEY|ShiftMask, XK_Return, spawn, {.v = termcmd } },
+    { MODKEY, XK_b, togglebar, {0} },
+    { MODKEY, XK_j, focusstack, {.i = +1 } },
+    { MODKEY, XK_k, focusstack, {.i = -1 } },
+    { MODKEY, XK_Return, zoom, {0} },
+    { MODKEY|ShiftMask, XK_c, killclient, {0} },
+    { MODKEY, XK_t, setlayout, {.v = &layouts[0]} },
+    { MODKEY, XK_f, setlayout, {.v = &layouts[1]} },
+    { MODKEY, XK_m, setlayout, {.v = &layouts[2]} },
+    TAGKEYS(XK_1, 0)
+    TAGKEYS(XK_2, 1)
+    TAGKEYS(XK_3, 2)
+    TAGKEYS(XK_4, 3)
+    TAGKEYS(XK_5, 4)
+    TAGKEYS(XK_6, 5)
+    TAGKEYS(XK_7, 6)
+    TAGKEYS(XK_8, 7)
+    TAGKEYS(XK_9, 8)
+    { MODKEY|ShiftMask, XK_q, quit, {0} },
+};
+DWMEOF
+}
+
+apply_dwm_patches() {
+    log "Applying DWM patches..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would apply DWM patches"
+        return
+    fi
+    
+    cd "$DWM_DIR"
+    # Skip patches for now to avoid complexity
+    log "Skipping patches for simplified setup"
+}
+
+build_dwm() {
+    log "Building DWM..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would build and install DWM"
+        return
+    fi
+    
+    cd "$DWM_DIR"
+    make clean install || error "Failed to build DWM"
+}
+
+create_dwmblocks_config() {
+    log "Creating dwmblocks configuration..."
+    backup_file "$DWMBLOCKS_DIR/blocks.h"
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would create dwmblocks config"
+        return
+    fi
+    
+    cat > "$DWMBLOCKS_DIR/blocks.h" << 'BLOCKSEOF'
+static const Block blocks[] = {
+    {"🔊 ", "amixer get Master | grep -o '[0-9]*%' | head -1", 5, 0},
+    {"💾 ", "free -h | awk '/^Mem/ { print $3\"/\"$2 }' | sed s/i//g", 30, 0},
+    {"📅 ", "date '+%b %d (%a) %I:%M%p'", 60, 0},
+};
+
+static char delim[] = " | ";
+static unsigned int delimLen = 5;
+BLOCKSEOF
+}
+
+build_dwmblocks() {
+    log "Building dwmblocks..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would build and install dwmblocks"
+        return
+    fi
+    
+    cd "$DWMBLOCKS_DIR"
+    make && sudo make install || error "Failed to build dwmblocks"
+}
+
 create_xinitrc() {
     log "Creating .xinitrc..."
     backup_file ~/.xinitrc
@@ -692,29 +469,18 @@ create_xinitrc() {
         return
     fi
     
-    cat > ~/.xinitrc << 'EOF'
+    cat > ~/.xinitrc << 'XINITEOF'
 #!/bin/sh
-
-# Start compositor
 picom -b &
-
-# Start notification daemon
 dunst &
-
-# Set wallpaper (random from wallpapers directory)
 if [ -d "$HOME/Pictures/Wallpapers" ] && [ "$(ls -A $HOME/Pictures/Wallpapers)" ]; then
     feh --bg-fill --randomize ~/Pictures/Wallpapers/* &
 else
-    # Fallback solid color
     xsetroot -solid '#1e1e1e' &
 fi
-
-# Start dwmblocks
 dwmblocks &
-
-# Start DWM
 exec dwm
-EOF
+XINITEOF
     
     chmod +x ~/.xinitrc
 }
@@ -729,23 +495,15 @@ create_dwm_autostart() {
         return
     fi
     
-    cat > ~/.dwm/autostart.sh << 'EOF'
+    cat > ~/.dwm/autostart.sh << 'AUTOSTARTEOF'
 #!/bin/bash
-
-# Network Manager applet
 nm-applet &
-
-# Set keyboard repeat rate
 xset r rate 300 50 &
-
-# Disable bell
 xset b off &
-
-# Start compositor if not already running
 if ! pgrep -x "picom" > /dev/null; then
     picom -b &
 fi
-EOF
+AUTOSTARTEOF
     
     chmod +x ~/.dwm/autostart.sh
 }
@@ -757,4 +515,248 @@ setup_amd_optimizations() {
         return
     fi
     
-    log "
+    log "AMD GPU detected, applying optimizations..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would create AMD GPU configuration"
+        return
+    fi
+    
+    sudo tee /etc/X11/xorg.conf.d/20-amd.conf > /dev/null << 'AMDEOF'
+Section "Device"
+    Identifier "AMD Graphics"
+    Driver "amdgpu"
+    Option "AccelMethod" "glamor"
+    Option "DRI" "3"
+    Option "TearFree" "true"
+EndSection
+AMDEOF
+
+    configure_amd_kernel_parameters
+}
+
+configure_amd_kernel_parameters() {
+    log "Configuring kernel parameters..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would configure AMD kernel parameters"
+        return
+    fi
+    
+    echo "Choose AMD P-state mode (active/guided/passive/none): "
+    read PSTATE_MODE
+    if [[ -n "$PSTATE_MODE" && "$PSTATE_MODE" != "none" ]]; then
+        if ! grep -q "amd_pstate=$PSTATE_MODE" /etc/default/grub; then
+            sudo sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"/&amd_pstate=$PSTATE_MODE /" /etc/default/grub
+            sudo grub-mkconfig -o /boot/grub/grub.cfg || warn "Failed to update GRUB configuration"
+        fi
+    fi
+}
+
+# Additional configuration functions
+setup_font_rendering() {
+    log "Configuring font rendering..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would configure font rendering"
+        return
+    fi
+    
+    sudo mkdir -p /etc/fonts/conf.d
+    backup_file /etc/fonts/local.conf
+    sudo tee /etc/fonts/local.conf > /dev/null << 'FONTEOF'
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <match target="font">
+    <edit name="antialias" mode="assign"><bool>true</bool></edit>
+  </match>
+  <match target="font">
+    <edit name="hinting" mode="assign"><bool>true</bool></edit>
+  </match>
+</fontconfig>
+FONTEOF
+
+    sudo fc-cache -fv || warn "Failed to update font cache"
+}
+
+setup_shell_aliases() {
+    log "Configuring shell aliases..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would configure shell aliases"
+        return
+    fi
+    
+    local shell_config=~/.bashrc
+    [[ -n "$ZSH_VERSION" ]] && shell_config=~/.zshrc
+    
+    backup_file "$shell_config"
+    cat >> "$shell_config" << 'ALIASEOF'
+
+# Custom aliases
+alias la='ls -la --color=always'
+alias fm='yazi'
+alias backup='sudo timeshift --create --comments "Manual backup $(date)"'
+ALIASEOF
+}
+
+create_user_directories() {
+    log "Creating user directories..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would create user directories"
+        return
+    fi
+    
+    mkdir -p ~/Documents/Scripts ~/Downloads/Software ~/.local/bin
+    mkdir -p ~/Pictures/Screenshots
+}
+
+cleanup_system() {
+    log "Cleaning up system..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN: Would clean up system"
+        return
+    fi
+    
+    sudo pacman -Rns $(pacman -Qtdq) 2>/dev/null || true
+}
+
+# Menu and execution functions
+show_menu() {
+    echo -e "${BLUE}=== Arch Linux Post-Install Setup ===${NC}"
+    echo "Available modules:"
+    echo "1.  System Update"
+    echo "2.  Enable Multilib"  
+    echo "3.  Install Essential Packages"
+    echo "4.  Install Additional Packages"
+    echo "5.  Install AUR Helper"
+    echo "6.  Install AUR Packages" 
+    echo "7.  Setup DWM Environment"
+    echo "8.  AMD Optimizations"
+    echo "9.  Enable Services"
+    echo "10. Setup Firewall"
+    echo "11. Font Rendering"
+    echo "12. Shell Aliases"
+    echo "13. User Directories"
+    echo "14. Cleanup System"
+    echo "15. Run All (Full Setup)"
+    echo "16. Toggle Dry Run (currently: $DRY_RUN)"
+    echo "0.  Exit"
+    echo
+}
+
+run_selected_modules() {
+    local modules=("$@")
+    
+    for module in "${modules[@]}"; do
+        case $module in
+            1) update_system ;;
+            2) enable_multilib ;;
+            3) install_essential_packages ;;
+            4) install_additional_packages ;;
+            5) install_aur_helper ;;
+            6) install_aur_packages ;;
+            7) setup_dwm_environment ;;
+            8) setup_amd_optimizations ;;
+            9) enable_essential_services ;;
+            10) setup_ufw_firewall ;;
+            11) setup_font_rendering ;;
+            12) setup_shell_aliases ;;
+            13) create_user_directories ;;
+            14) cleanup_system ;;
+            *) warn "Unknown module: $module" ;;
+        esac
+    done
+}
+
+run_full_setup() {
+    log "Starting full setup..."
+    local all_modules=(1 2 3 4 5 6 7 8 9 10 11 12 13 14)
+    run_selected_modules "${all_modules[@]}"
+    log "Full setup completed!"
+}
+
+interactive_menu() {
+    while true; do
+        show_menu
+        echo -n "Select option(s) (space-separated, e.g., '1 3 5' or 'q' to quit): "
+        read -r input
+        
+        case $input in
+            q|Q|0) 
+                log "Exiting..."
+                exit 0
+                ;;
+            15)
+                run_full_setup
+                break
+                ;;
+            16)
+                DRY_RUN=$( [ "$DRY_RUN" = true ] && echo false || echo true )
+                log "Dry run mode set to: $DRY_RUN"
+                continue
+                ;;
+            *)
+                local selected_modules
+                read -ra selected_modules <<< "$input"
+                run_selected_modules "${selected_modules[@]}"
+                echo -e "${GREEN}Selected modules completed!${NC}"
+                echo -n "Press Enter to continue..."
+                read
+                ;;
+        esac
+    done
+}
+
+# Main execution
+main() {
+    validate_root
+    check_disk_space  
+    check_internet
+    
+    log "Arch Linux Post-Install Setup Script"
+    log "Debug output is being saved to $DEBUG_LOG"
+    
+    if [ $# -eq 0 ]; then
+        echo -e "${YELLOW}Continue with interactive mode? (y/N)${NC}"
+        read -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            error "Script execution cancelled by user"
+        fi
+        interactive_menu
+    else
+        case $1 in
+            --full|--all)
+                run_full_setup
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                if [ $# -gt 1 ]; then
+                    shift
+                    run_selected_modules "$@"
+                else
+                    run_full_setup
+                fi
+                ;;
+            --help|-h)
+                echo "Usage: $0 [options] [module_numbers...]"
+                echo "Options:"
+                echo "  --full, --all     Run all modules"
+                echo "  --dry-run         Enable dry run mode"
+                echo "  --help, -h        Show this help"
+                exit 0
+                ;;
+            *)
+                run_selected_modules "$@"
+                ;;
+        esac
+    fi
+    
+    echo -e "\n${GREEN}Setup completed! Reboot recommended.${NC}"
+}
+
+main "$@"
