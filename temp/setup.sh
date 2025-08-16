@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Progress tracking
-TOTAL_STEPS=12
+TOTAL_STEPS=13
 CURRENT_STEP=0
 
 # Logging functions
@@ -50,9 +50,26 @@ update_system() {
     sudo pacman -Syu --noconfirm
 }
 
+# Handle PulseAudio conflicts
+handle_pulseaudio_conflict() {
+    if pacman -Qs pulseaudio >/dev/null 2>&1; then
+        warn "PulseAudio is currently installed and may conflict with PipeWire"
+        printf "Do you want to remove PulseAudio? (y/N): "
+        read -r response
+        if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
+            log "Removing PulseAudio..."
+            sudo pacman -R pulseaudio --noconfirm
+        else
+            warn "Keeping PulseAudio - you may experience audio conflicts"
+        fi
+    fi
+}
+
 # Install essential packages
 install_packages() {
     progress "Installing essential packages..."
+    handle_pulseaudio_conflict
+    
     sudo pacman -S --noconfirm \
         base-devel \
         git \
@@ -93,7 +110,7 @@ install_packages() {
         xdg-utils \
         unzip \
         p7zip \
-        neofetch
+        fastfetch
 }
 
 # Install AUR helper (yay)
@@ -147,7 +164,136 @@ build_suckless() {
     cd "$HOME/.local/src"
 }
 
-# Build all suckless software
+# Detect CPU vendor
+detect_cpu_vendor() {
+    if grep -q "GenuineIntel" /proc/cpuinfo; then
+        echo "intel"
+    elif grep -q "AuthenticAMD" /proc/cpuinfo; then
+        echo "amd"
+    else
+        echo "unknown"
+    fi
+}
+
+# Install CPU microcode
+install_cpu_microcode() {
+    cpu_vendor=$(detect_cpu_vendor)
+    case $cpu_vendor in
+        "intel")
+            log "Installing Intel microcode..."
+            sudo pacman -S --noconfirm intel-ucode
+            ;;
+        "amd")
+            log "Installing AMD microcode..."
+            sudo pacman -S --noconfirm amd-ucode
+            ;;
+        *)
+            warn "Unknown CPU vendor, skipping microcode installation"
+            ;;
+    esac
+}
+
+# Detect GPU vendor
+detect_gpu_vendor() {
+    if lspci | grep -i "nvidia" >/dev/null 2>&1; then
+        echo "nvidia"
+    elif lspci | grep -i "amd\|radeon" >/dev/null 2>&1; then
+        echo "amd"
+    elif lspci | grep -i "intel.*graphics\|intel.*display" >/dev/null 2>&1; then
+        echo "intel"
+    else
+        echo "unknown"
+    fi
+}
+
+# Install GPU drivers
+install_gpu_drivers() {
+    gpu_vendor=$(detect_gpu_vendor)
+    case $gpu_vendor in
+        "nvidia")
+            log "Installing NVIDIA proprietary drivers..."
+            sudo pacman -S --noconfirm nvidia nvidia-utils lib32-nvidia-utils
+            ;;
+        "amd")
+            log "Installing AMD open-source drivers..."
+            sudo pacman -S --noconfirm mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon xf86-video-amdgpu
+            ;;
+        "intel")
+            log "Installing Intel graphics drivers..."
+            sudo pacman -S --noconfirm mesa lib32-mesa vulkan-intel lib32-vulkan-intel intel-media-driver libva-intel-driver
+            ;;
+        *)
+            warn "Unknown GPU vendor, installing generic mesa drivers..."
+            sudo pacman -S --noconfirm mesa lib32-mesa
+            ;;
+    esac
+}
+
+# Detect virtualization environment
+detect_virtualization() {
+    if command -v systemd-detect-virt >/dev/null 2>&1; then
+        virt_type=$(systemd-detect-virt)
+        if [ "$virt_type" != "none" ]; then
+            echo "$virt_type"
+        else
+            echo "none"
+        fi
+    elif [ -f /sys/class/dmi/id/product_name ]; then
+        product_name=$(cat /sys/class/dmi/id/product_name 2>/dev/null)
+        case $product_name in
+            *"QEMU"*|*"KVM"*)
+                echo "kvm"
+                ;;
+            *"VirtualBox"*)
+                echo "virtualbox"
+                ;;
+            *"VMware"*)
+                echo "vmware"
+                ;;
+            *)
+                echo "none"
+                ;;
+        esac
+    else
+        echo "none"
+    fi
+}
+
+# Install VM guest tools
+install_vm_tools() {
+    virt_env=$(detect_virtualization)
+    case $virt_env in
+        "kvm"|"qemu")
+            log "Installing QEMU guest tools..."
+            sudo pacman -S --noconfirm qemu-guest-agent spice-vdagent
+            sudo systemctl enable qemu-guest-agent
+            ;;
+        "virtualbox")
+            log "Installing VirtualBox guest tools..."
+            sudo pacman -S --noconfirm virtualbox-guest-utils
+            sudo systemctl enable vboxservice
+            ;;
+        "vmware")
+            log "Installing VMware guest tools..."
+            sudo pacman -S --noconfirm open-vm-tools
+            sudo systemctl enable vmtoolsd
+            ;;
+        "none")
+            log "No virtualization detected, skipping guest tools..."
+            ;;
+        *)
+            warn "Unknown virtualization environment: $virt_env, skipping guest tools..."
+            ;;
+    esac
+}
+
+# Setup hardware support
+setup_hardware_support() {
+    progress "Detecting and configuring hardware support..."
+    install_cpu_microcode
+    install_gpu_drivers
+    install_vm_tools
+}
 build_all_suckless() {
     progress "Building suckless software (DWM, ST, dmenu)..."
     build_suckless "dwm"
@@ -456,6 +602,7 @@ main() {
     install_packages
     install_yay
     create_directories
+    setup_hardware_support
     build_all_suckless
     enable_services
     create_xinitrc
