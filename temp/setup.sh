@@ -164,6 +164,17 @@ build_suckless() {
     cd "$HOME/.local/src"
 }
 
+# Enable multilib repository
+enable_multilib() {
+    if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
+        log "Enabling multilib repository..."
+        sudo sed -i '/^#\[multilib\]/,/^#Include = \/etc\/pacman.d\/mirrorlist/ s/^#//' /etc/pacman.conf
+        sudo pacman -Sy --noconfirm
+    else
+        log "Multilib repository already enabled"
+    fi
+}
+
 # Detect CPU vendor
 detect_cpu_vendor() {
     if grep -q "GenuineIntel" /proc/cpuinfo; then
@@ -195,19 +206,33 @@ install_cpu_microcode() {
 
 # Detect GPU vendor
 detect_gpu_vendor() {
-    if lspci | grep -i "nvidia" >/dev/null 2>&1; then
+    # Check for QEMU/KVM virtual graphics first
+    if lspci | grep -i "1234:1111\|qemu\|virtio.*vga" >/dev/null 2>&1; then
+        echo "virtual"
+    elif lspci | grep -i "nvidia" >/dev/null 2>&1; then
         echo "nvidia"
     elif lspci | grep -i "amd\|radeon" >/dev/null 2>&1; then
         echo "amd"
     elif lspci | grep -i "intel.*graphics\|intel.*display" >/dev/null 2>&1; then
         echo "intel"
     else
-        echo "unknown"
+        # Fallback: check VGA controllers more broadly
+        if lspci | grep -i "vga.*intel" >/dev/null 2>&1; then
+            echo "intel"
+        elif lspci | grep -i "vga.*nvidia" >/dev/null 2>&1; then
+            echo "nvidia"
+        elif lspci | grep -i "vga.*amd\|vga.*radeon" >/dev/null 2>&1; then
+            echo "amd"
+        else
+            echo "unknown"
+        fi
     fi
 }
 
 # Install GPU drivers
 install_gpu_drivers() {
+    enable_multilib
+    
     gpu_vendor=$(detect_gpu_vendor)
     case $gpu_vendor in
         "nvidia")
@@ -221,6 +246,10 @@ install_gpu_drivers() {
         "intel")
             log "Installing Intel graphics drivers..."
             sudo pacman -S --noconfirm mesa lib32-mesa vulkan-intel lib32-vulkan-intel intel-media-driver libva-intel-driver
+            ;;
+        "virtual")
+            log "Virtual GPU detected (QEMU/KVM), installing basic drivers..."
+            sudo pacman -S --noconfirm mesa lib32-mesa xf86-video-qxl
             ;;
         *)
             warn "Unknown GPU vendor, installing generic mesa drivers..."
