@@ -35,6 +35,35 @@ progress() {
     printf "${BLUE}[%d/%d]${NC} %s\n" "$CURRENT_STEP" "$TOTAL_STEPS" "$1"
 }
 
+# Check if package is installed
+is_package_installed() {
+    pacman -Qi "$1" >/dev/null 2>&1
+}
+
+# Get list of packages that need to be installed
+get_missing_packages() {
+    missing_packages=""
+    for package in "$@"; do
+        if ! is_package_installed "$package"; then
+            missing_packages="$missing_packages $package"
+        fi
+    done
+    echo "$missing_packages"
+}
+
+# Ask user about file overwrite
+ask_overwrite() {
+    file_path="$1"
+    printf "${YELLOW}File exists: %s${NC}\n" "$file_path"
+    printf "Do you want to overwrite it? (y/N): "
+    read -r response
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
+        return 0  # Overwrite
+    else
+        return 1  # Don't overwrite
+    fi
+}
+
 # Check if running as root
 check_root() {
     progress "Checking user permissions..."
@@ -70,47 +99,17 @@ install_packages() {
     progress "Installing essential packages..."
     handle_pulseaudio_conflict
     
-    sudo pacman -S --noconfirm \
-        base-devel \
-        git \
-        wget \
-        curl \
-        vim \
-        nano \
-        htop \
-        firefox \
-        xorg-server \
-        xorg-xinit \
-        xorg-xrandr \
-        xorg-xsetroot \
-        lightdm \
-        lightdm-gtk-greeter \
-        picom \
-        feh \
-        rofi \
-        ghostty \
-        dmenu \
-        ttf-dejavu \
-        ttf-liberation \
-        noto-fonts \
-        pipewire \
-        pipewire-alsa \
-        pipewire-pulse \
-        pipewire-jack \
-        wireplumber \
-        pavucontrol \
-        networkmanager \
-        network-manager-applet \
-        bluez \
-        bluez-utils \
-        thunar \
-        gvfs \
-        tumbler \
-        xdg-user-dirs \
-        xdg-utils \
-        unzip \
-        p7zip \
-        fastfetch
+    # List of essential packages
+    packages="base-devel git wget curl vim nano htop firefox xorg-server xorg-xinit xorg-xrandr xorg-xsetroot lightdm lightdm-gtk-greeter picom feh rofi ghostty dmenu ttf-dejavu ttf-liberation noto-fonts pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber pavucontrol networkmanager network-manager-applet bluez bluez-utils thunar gvfs tumbler xdg-user-dirs xdg-utils unzip p7zip fastfetch"
+    
+    missing_packages=$(get_missing_packages $packages)
+    
+    if [ -n "$missing_packages" ]; then
+        log "Installing missing packages:$missing_packages"
+        sudo pacman -S --noconfirm $missing_packages
+    else
+        log "All essential packages already installed"
+    fi
 }
 
 # Install AUR helper (yay)
@@ -144,14 +143,34 @@ create_directories() {
 # Clone and build suckless software
 build_suckless() {
     project="$1"
-    log "Cloning and building $project..."
+    
+    # Check if binary already exists and is newer than source
+    if [ -x "/usr/local/bin/$project" ] && [ -d "$HOME/.local/src/$project" ]; then
+        cd "$HOME/.local/src/$project"
+        if [ -f "config.h" ] && [ "config.h" -nt "/usr/local/bin/$project" ]; then
+            log "$project needs rebuilding due to config changes..."
+        elif git status >/dev/null 2>&1; then
+            # Check if we need to pull updates
+            git fetch >/dev/null 2>&1
+            if [ "$(git rev-parse HEAD)" = "$(git rev-parse '@{u}')" ]; then
+                log "$project is already built and up-to-date"
+                return
+            else
+                log "$project has updates available, rebuilding..."
+            fi
+        else
+            log "$project binary exists and appears current"
+            return
+        fi
+    else
+        log "Cloning and building $project..."
+    fi
     
     cd "$HOME/.local/src"
     
     if [ ! -d "$project" ]; then
         git clone "https://git.suckless.org/$project"
     else
-        warn "$project directory already exists, pulling latest changes..."
         cd "$project"
         git pull
         cd ..
@@ -191,12 +210,20 @@ install_cpu_microcode() {
     cpu_vendor=$(detect_cpu_vendor)
     case $cpu_vendor in
         "intel")
-            log "Installing Intel microcode..."
-            sudo pacman -S --noconfirm intel-ucode
+            if ! is_package_installed "intel-ucode"; then
+                log "Installing Intel microcode..."
+                sudo pacman -S --noconfirm intel-ucode
+            else
+                log "Intel microcode already installed"
+            fi
             ;;
         "amd")
-            log "Installing AMD microcode..."
-            sudo pacman -S --noconfirm amd-ucode
+            if ! is_package_installed "amd-ucode"; then
+                log "Installing AMD microcode..."
+                sudo pacman -S --noconfirm amd-ucode
+            else
+                log "AMD microcode already installed"
+            fi
             ;;
         *)
             warn "Unknown CPU vendor, skipping microcode installation"
@@ -236,24 +263,54 @@ install_gpu_drivers() {
     gpu_vendor=$(detect_gpu_vendor)
     case $gpu_vendor in
         "nvidia")
-            log "Installing NVIDIA proprietary drivers..."
-            sudo pacman -S --noconfirm nvidia nvidia-utils lib32-nvidia-utils
+            gpu_packages="nvidia nvidia-utils lib32-nvidia-utils"
+            missing_gpu_packages=$(get_missing_packages $gpu_packages)
+            if [ -n "$missing_gpu_packages" ]; then
+                log "Installing NVIDIA proprietary drivers..."
+                sudo pacman -S --noconfirm $missing_gpu_packages
+            else
+                log "NVIDIA drivers already installed"
+            fi
             ;;
         "amd")
-            log "Installing AMD open-source drivers..."
-            sudo pacman -S --noconfirm mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon xf86-video-amdgpu
+            gpu_packages="mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon xf86-video-amdgpu"
+            missing_gpu_packages=$(get_missing_packages $gpu_packages)
+            if [ -n "$missing_gpu_packages" ]; then
+                log "Installing AMD open-source drivers..."
+                sudo pacman -S --noconfirm $missing_gpu_packages
+            else
+                log "AMD drivers already installed"
+            fi
             ;;
         "intel")
-            log "Installing Intel graphics drivers..."
-            sudo pacman -S --noconfirm mesa lib32-mesa vulkan-intel lib32-vulkan-intel intel-media-driver libva-intel-driver
+            gpu_packages="mesa lib32-mesa vulkan-intel lib32-vulkan-intel intel-media-driver libva-intel-driver"
+            missing_gpu_packages=$(get_missing_packages $gpu_packages)
+            if [ -n "$missing_gpu_packages" ]; then
+                log "Installing Intel graphics drivers..."
+                sudo pacman -S --noconfirm $missing_gpu_packages
+            else
+                log "Intel drivers already installed"
+            fi
             ;;
         "virtual")
-            log "Virtual GPU detected (QEMU/KVM), installing basic drivers..."
-            sudo pacman -S --noconfirm mesa lib32-mesa xf86-video-qxl
+            gpu_packages="mesa lib32-mesa xf86-video-qxl"
+            missing_gpu_packages=$(get_missing_packages $gpu_packages)
+            if [ -n "$missing_gpu_packages" ]; then
+                log "Virtual GPU detected (QEMU/KVM), installing basic drivers..."
+                sudo pacman -S --noconfirm $missing_gpu_packages
+            else
+                log "Virtual GPU drivers already installed"
+            fi
             ;;
         *)
-            warn "Unknown GPU vendor, installing generic mesa drivers..."
-            sudo pacman -S --noconfirm mesa lib32-mesa
+            gpu_packages="mesa lib32-mesa"
+            missing_gpu_packages=$(get_missing_packages $gpu_packages)
+            if [ -n "$missing_gpu_packages" ]; then
+                warn "Unknown GPU vendor, installing generic mesa drivers..."
+                sudo pacman -S --noconfirm $missing_gpu_packages
+            else
+                log "Generic GPU drivers already installed"
+            fi
             ;;
     esac
 }
@@ -293,19 +350,42 @@ install_vm_tools() {
     virt_env=$(detect_virtualization)
     case $virt_env in
         "kvm"|"qemu")
-            log "Installing QEMU guest tools..."
-            sudo pacman -S --noconfirm qemu-guest-agent spice-vdagent
-            sudo systemctl enable qemu-guest-agent
+            vm_packages="qemu-guest-agent spice-vdagent"
+            missing_vm_packages=$(get_missing_packages $vm_packages)
+            if [ -n "$missing_vm_packages" ]; then
+                log "Installing QEMU guest tools..."
+                sudo pacman -S --noconfirm $missing_vm_packages
+            else
+                log "QEMU guest tools already installed"
+            fi
+            
+            if ! systemctl is-enabled qemu-guest-agent >/dev/null 2>&1; then
+                sudo systemctl enable qemu-guest-agent
+            fi
             ;;
         "virtualbox")
-            log "Installing VirtualBox guest tools..."
-            sudo pacman -S --noconfirm virtualbox-guest-utils
-            sudo systemctl enable vboxservice
+            if ! is_package_installed "virtualbox-guest-utils"; then
+                log "Installing VirtualBox guest tools..."
+                sudo pacman -S --noconfirm virtualbox-guest-utils
+            else
+                log "VirtualBox guest tools already installed"
+            fi
+            
+            if ! systemctl is-enabled vboxservice >/dev/null 2>&1; then
+                sudo systemctl enable vboxservice
+            fi
             ;;
         "vmware")
-            log "Installing VMware guest tools..."
-            sudo pacman -S --noconfirm open-vm-tools
-            sudo systemctl enable vmtoolsd
+            if ! is_package_installed "open-vm-tools"; then
+                log "Installing VMware guest tools..."
+                sudo pacman -S --noconfirm open-vm-tools
+            else
+                log "VMware guest tools already installed"
+            fi
+            
+            if ! systemctl is-enabled vmtoolsd >/dev/null 2>&1; then
+                sudo systemctl enable vmtoolsd
+            fi
             ;;
         "none")
             log "No virtualization detected, skipping guest tools..."
@@ -333,20 +413,48 @@ build_all_suckless() {
 # Enable system services
 enable_services() {
     progress "Enabling system services..."
-    sudo systemctl enable lightdm
-    sudo systemctl enable NetworkManager
-    sudo systemctl enable bluetooth
+    
+    services="lightdm NetworkManager bluetooth"
+    for service in $services; do
+        if ! systemctl is-enabled "$service" >/dev/null 2>&1; then
+            log "Enabling $service..."
+            sudo systemctl enable "$service"
+        else
+            log "$service already enabled"
+        fi
+    done
     
     # Enable pipewire services for current user
-    systemctl --user enable pipewire.service
-    systemctl --user enable pipewire-pulse.service
-    systemctl --user enable wireplumber.service
+    user_services="pipewire.service pipewire-pulse.service wireplumber.service"
+    for service in $user_services; do
+        if ! systemctl --user is-enabled "$service" >/dev/null 2>&1; then
+            log "Enabling user service $service..."
+            systemctl --user enable "$service"
+        else
+            log "User service $service already enabled"
+        fi
+    done
 }
 
 # Create xinitrc configuration
 create_xinitrc() {
     progress "Creating X11 session configuration..."
-    cat > "$HOME/.config/X11/xinitrc" << 'EOF'
+    
+    config_file="$HOME/.config/X11/xinitrc"
+    if [ -f "$config_file" ]; then
+        if ask_overwrite "$config_file"; then
+            log "Overwriting existing xinitrc..."
+        else
+            log "Keeping existing xinitrc"
+            # Still create symlink if it doesn't exist
+            if [ ! -L "$HOME/.xinitrc" ]; then
+                ln -sf "$HOME/.config/X11/xinitrc" "$HOME/.xinitrc"
+            fi
+            return
+        fi
+    fi
+    
+    cat > "$config_file" << 'EOF'
 #!/bin/sh
 
 userresources=$HOME/.config/X11/Xresources
@@ -404,10 +512,12 @@ done &
 # Execute DWM
 exec dwm
 EOF
-    chmod +x "$HOME/.config/X11/xinitrc"
+    chmod +x "$config_file"
     
     # Create a symlink for compatibility
-    ln -sf "$HOME/.config/X11/xinitrc" "$HOME/.xinitrc"
+    if [ ! -L "$HOME/.xinitrc" ]; then
+        ln -sf "$HOME/.config/X11/xinitrc" "$HOME/.xinitrc"
+    fi
 }
 
 # Create DWM desktop entry for LightDM
@@ -426,7 +536,22 @@ EOF
 # Create Xresources configuration
 create_xresources() {
     progress "Creating X resources configuration..."
-    cat > "$HOME/.config/X11/Xresources" << 'EOF'
+    
+    config_file="$HOME/.config/X11/Xresources"
+    if [ -f "$config_file" ]; then
+        if ask_overwrite "$config_file"; then
+            log "Overwriting existing Xresources..."
+        else
+            log "Keeping existing Xresources"
+            # Still create symlink if it doesn't exist
+            if [ ! -L "$HOME/.Xresources" ]; then
+                ln -sf "$HOME/.config/X11/Xresources" "$HOME/.Xresources"
+            fi
+            return
+        fi
+    fi
+    
+    cat > "$config_file" << 'EOF'
 ! Terminal colors
 *foreground: #d0d0d0
 *background: #151515
@@ -452,7 +577,9 @@ create_xresources() {
 EOF
     
     # Create a symlink for compatibility
-    ln -sf "$HOME/.config/X11/Xresources" "$HOME/.Xresources"
+    if [ ! -L "$HOME/.Xresources" ]; then
+        ln -sf "$HOME/.config/X11/Xresources" "$HOME/.Xresources"
+    fi
 }
 
 # Generate XDG user directories
@@ -466,7 +593,19 @@ create_additional_configs() {
     progress "Creating additional configuration files..."
     
     # Create basic picom config
-    cat > "$HOME/.config/picom/picom.conf" << 'EOF'
+    picom_config="$HOME/.config/picom/picom.conf"
+    if [ -f "$picom_config" ]; then
+        if ask_overwrite "$picom_config"; then
+            log "Overwriting existing picom config..."
+        else
+            log "Keeping existing picom config"
+            # Skip to next config
+            picom_skip=true
+        fi
+    fi
+    
+    if [ "$picom_skip" != "true" ]; then
+        cat > "$picom_config" << 'EOF'
 # Basic picom configuration for DWM
 backend = "glx";
 vsync = true;
@@ -497,10 +636,23 @@ wintypes:
   dropdown_menu = { opacity = 0.95; };
 };
 EOF
+    fi
 
     # Create basic rofi config
-    mkdir -p "$HOME/.config/rofi"
-    cat > "$HOME/.config/rofi/config.rasi" << 'EOF'
+    rofi_config="$HOME/.config/rofi/config.rasi"
+    if [ -f "$rofi_config" ]; then
+        if ask_overwrite "$rofi_config"; then
+            log "Overwriting existing rofi config..."
+        else
+            log "Keeping existing rofi config"
+            # Skip to next config
+            rofi_skip=true
+        fi
+    fi
+    
+    if [ "$rofi_skip" != "true" ]; then
+        mkdir -p "$HOME/.config/rofi"
+        cat > "$rofi_config" << 'EOF'
 configuration {
     modi: "run,drun,window";
     width: 50;
@@ -544,9 +696,20 @@ configuration {
     matching-negate-char: '-';
 }
 EOF
+    fi
 
     # Create basic ghostty config
-    cat > "$HOME/.config/ghostty/config" << 'EOF'
+    ghostty_config="$HOME/.config/ghostty/config"
+    if [ -f "$ghostty_config" ]; then
+        if ask_overwrite "$ghostty_config"; then
+            log "Overwriting existing ghostty config..."
+        else
+            log "Keeping existing ghostty config"
+            return
+        fi
+    fi
+    
+    cat > "$ghostty_config" << 'EOF'
 # Ghostty Terminal Configuration
 font-family = "DejaVu Sans Mono"
 font-size = 11
